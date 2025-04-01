@@ -27,7 +27,8 @@ SECRET_KEY = 'django-insecure-nad2nz^fsmf^+vcd=l9k5&&wj@3dcuu5@axa2fls3##pwa1p8^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Update allowed hosts to include your Elastic Beanstalk domain
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.elasticbeanstalk.com', '.amazonaws.com']
 
 
 # Application definition
@@ -59,10 +60,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
-# CORS Settings
+# CORS Settings - Update to include your Elastic Beanstalk domain
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'https://your-frontend-domain.com'  # Add your frontend domain if deployed separately
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -105,13 +107,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'backendpandacar.wsgi.application'
 
 
-# Database
+# Database - Update to use RDS PostgreSQL
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('RDS_DB_NAME', ''),
+        'USER': os.environ.get('RDS_USERNAME', 'ebroot'),  # Default username from your EB config
+        'PASSWORD': os.environ.get('RDS_PASSWORD', 'Silver1999'),  # Your database password
+        'HOST': os.environ.get('RDS_HOSTNAME', ''),
+        'PORT': os.environ.get('RDS_PORT', '5432'),
     }
 }
 
@@ -230,10 +236,12 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST": True
 }
 
-# CSRF settings
+# CSRF settings - Update to include your Elastic Beanstalk domain
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173", 
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'https://*.elasticbeanstalk.com',
+    'https://*.amazonaws.com'
 ]
 
 # Security settings for development
