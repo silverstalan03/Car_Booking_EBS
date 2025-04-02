@@ -1,7 +1,11 @@
+# api/urls.py
 from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Status endpoint for testing
+    path('status/', views.status_view, name='status'),
+    
     # User routes
     path('users/', views.get_users, name='get_users'),
     path('users/create', views.create_user, name='create_user'),
@@ -41,7 +45,7 @@ urlpatterns = [
     path('bookings/create/', views.create_booking, name='create_booking'),
     path('bookings/cancel/<int:booking_id>/', views.cancel_booking, name='cancel_booking'),
     
-    # NEW: Local booking API routes (no authentication required)
+    # Local booking API routes (no authentication required)
     path('local-bookings/', views.create_local_booking, name='create_local_booking'),
     path('local-bookings/cancel/<int:booking_id>/', views.cancel_local_booking, name='cancel_local_booking'),
 ]

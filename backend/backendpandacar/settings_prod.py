@@ -1,4 +1,6 @@
+# backendpandacar/settings_prod.py
 from .settings import *
+import os
 
 # Production settings
 DEBUG = False
@@ -7,117 +9,94 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', SECRET_KEY)
 # Allow Elastic Beanstalk URL
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.elasticbeanstalk.com', '.amazonaws.com']
 
-# Configure templates to serve frontend
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'rest_framework_simplejwt',
+    'api',  # Your API app
 ]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# Database configuration - PostgreSQL
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('RDS_DB_NAME', 'ebdb'),
+        'USER': os.environ.get('RDS_USERNAME', 'ebroot'),
+        'PASSWORD': os.environ.get('RDS_PASSWORD', 'Silver1999.'),
+        'HOST': os.environ.get('RDS_HOSTNAME', 'localhost'),
+        'PORT': os.environ.get('RDS_PORT', '5432'),
+    }
+}
 
 # Static and media files configuration
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Database configuration for RDS
-if 'RDS_HOSTNAME' in os.environ:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ['RDS_DB_NAME'],
-            'USER': os.environ['RDS_USERNAME'],
-            'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ['RDS_PORT'],
-        }
-    }
-
-# CORS settings for production
+# CORS settings
 CORS_ALLOWED_ORIGINS = [
-    'https://*.elasticbeanstalk.com',
-    'http://*.elasticbeanstalk.com',
+    'http://carfrontend.s3-website-us-east-1.amazonaws.com',
+    'http://Car-App1-env.eba-qkeix5fn.us-east-1.elasticbeanstalk.com',
 ]
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # Disable in production
+CORS_ALLOW_ALL_ORIGINS = False
 
-# Update CSRF trusted origins
+# CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.elasticbeanstalk.com',
-    'http://*.elasticbeanstalk.com',
+    'http://carfrontend.s3-website-us-east-1.amazonaws.com',
+    'http://Car-App1-env.eba-qkeix5fn.us-east-1.elasticbeanstalk.com',
 ]
 
-# Security settings
-# Set these to True only if you configure HTTPS
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = True
+# REST framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
-# AWS settings - using environment variables
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
-AWS_API_GATEWAY_URL = os.environ.get('AWS_API_GATEWAY_URL', 'https://ozado4x5ci.execute-api.us-east-1.amazonaws.com/Dev')
-AWS_SNS_TOPIC_ARN = os.environ.get('AWS_SNS_TOPIC_ARN', 'arn:aws:sns:us-east-1:543952390368:CarBookingNotifications')
-AWS_SQS_QUEUE_URL = os.environ.get('AWS_SQS_QUEUE_URL', 'https://sqs.us-east-1.amazonaws.com/543952390368:CarBookingQueue')
-
-# Logging configuration
+# Simplify logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
     'handlers': {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/app-logs/django.log',
-            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'api': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
     },
 }
-
-# Ensure the log directory exists
-try:
-    os.makedirs('/var/log/app-logs', exist_ok=True)
-except Exception:
-    # Fall back to logging to stdout only
-    LOGGING['loggers']['django']['handlers'] = ['console']
-    LOGGING['loggers']['api']['handlers'] = ['console']

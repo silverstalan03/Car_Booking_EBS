@@ -1,3 +1,4 @@
+# api/views.py
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,6 +17,12 @@ import random
 from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
+
+# Status view for testing
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def status_view(request):
+    return Response({'status': 'Backend is running'}, status=status.HTTP_200_OK)
 
 # Custom Token View
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -39,17 +46,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             key='access_token',
             value=data['access'],
             httponly=True,
-            samesite='Lax',  # Changed from 'None' to 'Lax' for better compatibility
-            secure=False,  # Must be False for HTTP in local development
-            max_age=86400  # 24 hours in seconds
+            samesite='Lax',
+            secure=False,
+            max_age=86400
         )
         response.set_cookie(
             key="refresh_token",
             value=data['refresh'],
             httponly=True,
-            samesite='Lax',  # Changed from 'None' to 'Lax'
-            secure=False,  # Must be False for HTTP in local development
-            max_age=604800  # 7 days in seconds
+            samesite='Lax',
+            secure=False,
+            max_age=604800
         )
 
         del response.data['access']
@@ -68,8 +75,8 @@ def get_users(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@authentication_classes([])  # No authentication needed for registration
-@permission_classes([AllowAny])  # Allow anyone to register
+@authentication_classes([])
+@permission_classes([AllowAny])
 def create_user(request):
     print("Registration request received:", request.data)
     serializer = UserSerializer(data=request.data)
@@ -149,10 +156,9 @@ def car_detail(request, pk):
 
 # Basic movie and food endpoints
 @api_view(['GET'])
-@authentication_classes([])  # No authentication required
-@permission_classes([AllowAny])  # Allow anyone to access
+@authentication_classes([])
+@permission_classes([AllowAny])
 def available_movies(request):
-    # Sample data for movies
     movies = [
         {"id": 1, "title": "The Matrix", "genre": "Sci-Fi", "duration": 136},
         {"id": 2, "title": "Inception", "genre": "Sci-Fi", "duration": 148},
@@ -164,10 +170,9 @@ def available_movies(request):
     return Response(movies, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@authentication_classes([])  # No authentication required
-@permission_classes([AllowAny])  # Allow anyone to access
+@authentication_classes([])
+@permission_classes([AllowAny])
 def available_foods(request):
-    # Sample data for foods
     foods = [
         {"id": 1, "name": "Popcorn", "price": 5.99},
         {"id": 2, "name": "Nachos", "price": 7.99},
@@ -180,14 +185,13 @@ def available_foods(request):
 
 # Authentication views
 @api_view(['POST'])
-@authentication_classes([])  # No authentication required for logout
-@permission_classes([AllowAny])  # Allow anyone to logout
+@authentication_classes([])
+@permission_classes([AllowAny])
 def logout_user(request):
     print("Logout request received")
     
     response = Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
     
-    # Delete the authentication cookies
     try:
         print("Deleting access_token cookie")
         response.delete_cookie('access_token', path='/', domain=None)
@@ -204,7 +208,6 @@ def logout_user(request):
 def my_account_details(request):
     print(f"User in my_account_details: {request.user}, Auth: {request.user.is_authenticated}")
     
-    # Check if user is authenticated
     if not request.user.is_authenticated:
         print("User not authenticated in my_account_details")
         return Response({"error": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -329,8 +332,7 @@ def remove_from_cart(request, car_id):
 @api_view(['GET'])
 @authentication_classes([CustomAuthentication])
 def recommended_cars(request):
-    # This is a simplified version, not using complex ML
-    all_cars = Car.objects.all()[:4]  # Just return 4 random cars as recommendations
+    all_cars = Car.objects.all()[:4]
     serializer = CarSerializer(all_cars, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -338,7 +340,6 @@ def recommended_cars(request):
 @api_view(['POST'])
 @authentication_classes([CustomAuthentication])
 def create_booking(request):
-    # Check if user is authenticated
     print(f"User in create_booking: {request.user}, Auth: {request.user.is_authenticated}")
     if not request.user.is_authenticated:
         return Response({"error": "Authentication required. Please log in."}, 
@@ -346,10 +347,8 @@ def create_booking(request):
     
     user = request.user
     
-    # Print request data for debugging
     print("Booking request data:", request.data)
     
-    # Validate required fields
     required_fields = ['car_id', 'start_date', 'end_date']
     for field in required_fields:
         if field not in request.data:
@@ -359,12 +358,11 @@ def create_booking(request):
     car_id = request.data.get('car_id')
     start_date = request.data.get('start_date')
     end_date = request.data.get('end_date')
-    booking_time = request.data.get('booking_time', '19:00')  # Default to 7PM if not provided
+    booking_time = request.data.get('booking_time', '19:00')
     
     try:
         car = Car.objects.get(id=car_id)
         
-        # Parse dates and validate
         try:
             start = datetime.strptime(start_date, '%Y-%m-%d').date()
             end = datetime.strptime(end_date, '%Y-%m-%d').date()
@@ -372,7 +370,6 @@ def create_booking(request):
             return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, 
                            status=status.HTTP_400_BAD_REQUEST)
         
-        # Calculate days and price
         days = (end - start).days + 1
         if days < 1:
             return Response({"error": "End date must be after or same as start date"}, 
@@ -380,7 +377,6 @@ def create_booking(request):
             
         total_price = days * car.price_per_day
         
-        # Create the booking
         booking = Booking.objects.create(
             user=user,
             car=car,
@@ -389,14 +385,12 @@ def create_booking(request):
             total_price=total_price
         )
         
-        # Determine category based on price
         category = "economy"
         if car.price_per_day >= 80:
             category = "luxury"
         elif car.price_per_day >= 55:
             category = "medium"
         
-        # Create receipt
         receipt = {
             "booking_id": booking.id,
             "car": car.car_name,
@@ -425,15 +419,12 @@ def create_booking(request):
 def cancel_booking(request, booking_id):
     print(f"Cancelling booking {booking_id}")
     try:
-        # Find the booking
         booking = Booking.objects.get(id=booking_id)
         
-        # Check if the user owns this booking
         if booking.user != request.user and not request.user.is_admin:
             return Response({"error": "You don't have permission to cancel this booking"}, 
                            status=status.HTTP_403_FORBIDDEN)
         
-        # Delete the booking
         booking.delete()
         return Response({"message": "Booking cancelled successfully"}, 
                        status=status.HTTP_200_OK)
@@ -457,10 +448,8 @@ def get_user_bookings(request):
         user = request.user
         bookings = Booking.objects.filter(user=user).order_by('-start_date')
         
-        # Create custom response with required fields
         booking_data = []
         for booking in bookings:
-            # Determine category based on price
             category = "economy"
             if booking.car.price_per_day >= 80:
                 category = "luxury"
@@ -473,7 +462,7 @@ def get_user_bookings(request):
                 "category": category,
                 "start_date": booking.start_date.strftime('%Y-%m-%d'),
                 "end_date": booking.end_date.strftime('%Y-%m-%d'),
-                "booking_time": "19:00",  # Default value since not stored
+                "booking_time": "19:00",
                 "days": (booking.end_date - booking.start_date).days + 1,
                 "price_per_day": booking.car.price_per_day,
                 "total_price": booking.total_price,
@@ -496,10 +485,8 @@ def delete_account(request):
         user = request.user
         print(f"Deleting user account: {user.email}")
         
-        # Delete the user
         user.delete()
         
-        # Return success response with cookie clearing
         response = Response({"message": "Account successfully deleted"}, status=status.HTTP_200_OK)
         response.delete_cookie('access_token', path='/', domain=None)
         response.delete_cookie('refresh_token', path='/', domain=None)
@@ -511,30 +498,22 @@ def delete_account(request):
 
 # Local booking functionality (no authentication required)
 @api_view(['POST'])
-@authentication_classes([])  # No authentication required
-@permission_classes([AllowAny])  # Allow anyone to access
+@authentication_classes([])
+@permission_classes([AllowAny])
 def create_local_booking(request):
-    """
-    Handle local booking creation without authentication requirements
-    """
     try:
-        # Parse the request body
         data = json.loads(request.body)
         
-        # Print received data for debugging
         print("Local booking request data:", data)
         
-        # Generate a unique booking ID (smaller than the client-side one for differentiation)
         booking_id = random.randint(100, 999)
         
-        # Extract booking details
         car_name = data.get('car_name', 'Unknown Car')
         category = data.get('category', 'unknown')
         booking_date = data.get('start_date', datetime.today().isoformat())
         booking_time = data.get('booking_time', '19:00')
         price = data.get('price', 0)
         
-        # Create receipt object
         receipt = {
             "booking_id": booking_id,
             "car": car_name,
@@ -546,7 +525,6 @@ def create_local_booking(request):
             "server_processed": True
         }
         
-        # Log the booking (in a real app, you would save to database)
         print(f"Local booking created: {receipt}")
         
         return Response({
@@ -569,14 +547,10 @@ def create_local_booking(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['DELETE'])
-@authentication_classes([])  # No authentication required
-@permission_classes([AllowAny])  # Allow anyone to access
+@authentication_classes([])
+@permission_classes([AllowAny])
 def cancel_local_booking(request, booking_id):
-    """
-    Handle local booking cancellation without authentication requirements
-    """
     try:
-        # In a real app, you would delete from database
         print(f"Local booking cancelled: {booking_id}")
         
         return Response({
