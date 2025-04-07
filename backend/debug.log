@@ -1267,3 +1267,7 @@ INFO 2025-03-28 11:44:39,667 autoreload 10573 8226224192 /Users/silverstalaninba
 INFO 2025-03-28 11:44:39,982 autoreload 16169 8226224192 Watching for file changes with StatReloader
 INFO 2025-03-28 11:44:41,233 autoreload 16169 8226224192 /Users/silverstalaninbaraj/Desktop/Car_Booking_API copy/CarbookingAPI/backend/backendpandacar/urls.py changed, reloading.
 INFO 2025-03-28 11:44:41,436 autoreload 16172 8226224192 Watching for file changes with StatReloader
+INFO 2025-04-07 13:48:17,589 autoreload 2612 8226224192 Watching for file changes with StatReloader
+INFO 2025-04-07 20:23:21,528 autoreload 10333 8226224192 Watching for file changes with StatReloader
+INFO 2025-04-07 20:24:16,333 autoreload 10454 8226224192 Watching for file changes with StatReloader
+INFO 2025-04-07 20:25:42,879 autoreload 10879 8226224192 Watching for file changes with StatReloader

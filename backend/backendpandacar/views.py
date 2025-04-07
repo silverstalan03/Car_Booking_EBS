@@ -13,4 +13,15 @@ def api_root(request):
             'api_version': '1.0',
             'frontend_url': 'http://carfrontend.s3-website-us-east-1.amazonaws.com'
         })
+    # Otherwise redirect to the frontend
     return redirect('http://carfrontend.s3-website-us-east-1.amazonaws.com')
+
+def health_check(request):
+    """
+    Simple health check endpoint to verify if the API is online
+    This endpoint doesn't require authentication
+    """
+    return JsonResponse({
+        'status': 'ok',
+        'message': 'API server is running'
+    })

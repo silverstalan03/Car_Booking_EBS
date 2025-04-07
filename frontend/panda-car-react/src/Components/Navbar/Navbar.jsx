@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
-import { FaHome, FaCar, FaUser, FaFilm, FaUtensils } from 'react-icons/fa';
+import { FaHome, FaCar, FaFilm, FaUtensils } from 'react-icons/fa';
 
 const Navbar = () => {
   return (
@@ -21,15 +21,11 @@ const Navbar = () => {
         </Link>
         <Link to="/movies">
           <FaFilm className="nav-icon" />
-          <span>Available Movies</span>
+          <span>Popular Movies</span>
         </Link>
         <Link to="/foods">
           <FaUtensils className="nav-icon" />
           <span>Available Foods</span>
-        </Link>
-        <Link to="/account">
-          <FaUser className="nav-icon" />
-          <span>Account</span>
         </Link>
       </nav>
     </header>

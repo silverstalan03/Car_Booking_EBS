@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { checkBackendStatus, registerUser } from '../../api/apiService';
 import './SignupForm.css';
 
 const SignupForm = () => {
@@ -14,6 +15,17 @@ const SignupForm = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [backendStatus, setBackendStatus] = useState("unknown");
+
+  // Check backend status on component mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const result = await checkBackendStatus();
+      setBackendStatus(result.status);
+    };
+    
+    checkBackend();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,34 +55,7 @@ const SignupForm = () => {
     });
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/users/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          email: formData.email,
-          phone_number: formData.phone_number,
-          password: formData.password,
-        }),
-      });
-      
-      const responseData = await response.text();
-      console.log('Registration response:', response.status, responseData);
-      
-      if (!response.ok) {
-        let errorMessage = 'Registration failed';
-        try {
-          const errorData = JSON.parse(responseData);
-          errorMessage = Object.values(errorData).flat().join(', ');
-        } catch (e) {
-          // Use the text response if not valid JSON
-          errorMessage = responseData || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
+      await registerUser(formData);
       
       // Registration successful
       alert('Account created successfully! Please log in.');
@@ -87,7 +72,15 @@ const SignupForm = () => {
     <div className="signup-container">
       <div className="signup-form-wrapper">
         <h2>Create an Account</h2>
+        
+        {backendStatus === "offline" && (
+          <div className="backend-warning">
+            Backend server appears to be offline. Registration is not available at this time.
+          </div>
+        )}
+        
         {error && <div className="error-message">{error}</div>}
+        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="first_name">First Name</label>
@@ -98,6 +91,7 @@ const SignupForm = () => {
               value={formData.first_name}
               onChange={handleChange}
               required
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
           <div className="form-group">
@@ -109,6 +103,7 @@ const SignupForm = () => {
               value={formData.last_name}
               onChange={handleChange}
               required
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
           <div className="form-group">
@@ -120,6 +115,7 @@ const SignupForm = () => {
               value={formData.email}
               onChange={handleChange}
               required
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
           <div className="form-group">
@@ -132,6 +128,7 @@ const SignupForm = () => {
               onChange={handleChange}
               required
               placeholder="+1234567890"
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
           <div className="form-group">
@@ -144,6 +141,7 @@ const SignupForm = () => {
               onChange={handleChange}
               required
               minLength="8"
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
           <div className="form-group">
@@ -156,9 +154,13 @@ const SignupForm = () => {
               onChange={handleChange}
               required
               minLength="8"
+              disabled={backendStatus === "offline" || loading}
             />
           </div>
-          <button type="submit" disabled={loading}>
+          <button 
+            type="submit" 
+            disabled={loading || backendStatus === "offline"}
+          >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>

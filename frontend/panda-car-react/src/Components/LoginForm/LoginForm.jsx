@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./LoginForm.css";
 import { FaUser, FaLock, FaCar } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import { checkBackendStatus, loginUser } from "../../api/apiService";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -14,26 +15,14 @@ const LoginForm = () => {
   const [backendStatus, setBackendStatus] = useState("unknown"); // 'online', 'offline', 'unknown'
 
   // Check backend status on component mount
-  React.useEffect(() => {
-    checkBackendStatus();
+  useEffect(() => {
+    const checkBackend = async () => {
+      const result = await checkBackendStatus();
+      setBackendStatus(result.status);
+    };
+    
+    checkBackend();
   }, []);
-
-  const checkBackendStatus = async () => {
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/movies/', {
-        method: 'GET',
-      });
-      
-      if (response.ok) {
-        setBackendStatus("online");
-      } else {
-        setBackendStatus("offline");
-      }
-    } catch (err) {
-      console.error("Backend connection error:", err);
-      setBackendStatus("offline");
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,50 +37,18 @@ const LoginForm = () => {
     console.log("Attempting login with:", formData);
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
+      const data = await loginUser(formData);
+      console.log("Login successful:", data);
       
-      console.log("Login response status:", response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Login successful:", data);
-        
-        // Store authentication state and user information
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userId', data.user_id || '1');
-        localStorage.setItem('userEmail', formData.email); // Store the email entered by user
-        
-        // Try to extract name from email (as a fallback)
-        const userName = formData.email.split('@')[0];
-        localStorage.setItem('userName', userName);
-        
-        // Navigate based on role
-        if (data.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/home');
-        }
+      // Navigate based on role
+      if (data.role === 'admin') {
+        navigate('/admin');
       } else {
-        let errorMessage = 'Invalid credentials';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.detail || errorMessage;
-        } catch {
-          // If response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-        setError(errorMessage);
+        navigate('/home');
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Server connection error. Please try again later.");
+      setError(err.message || "Server connection error. Please try again later.");
     } finally {
       setIsLoading(false);
     }
